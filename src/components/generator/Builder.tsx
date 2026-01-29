@@ -19,7 +19,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core'
 import {
   arrayMove,
@@ -38,7 +40,8 @@ import { api } from '../../../convex/_generated/api'
 // ============================================================================
 import { RuleCard } from '../rules/RuleCard'
 import { TagChip } from '../tags/TagChip'
-import { SortableRuleItem } from './SortableRuleItem'
+import { SortableRuleItem, DragOverlayItem } from './SortableRuleItem'
+import { RulePreviewModal } from '../ui/RulePreviewModal'
 
 // ============================================================================
 // ### UTILITIES ###
@@ -69,6 +72,8 @@ export function Builder({ onCancel }: BuilderProps) {
   const [generatedMarkdown, setGeneratedMarkdown] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [previewRule, setPreviewRule] = useState<RuleWithTags | null>(null)
+  const [activeId, setActiveId] = useState<Id<'rules'> | null>(null)
 
   const rules = useQuery(api.rules.list) ?? []
   const tags = useQuery(api.tags.list) ?? []
@@ -114,8 +119,13 @@ export function Builder({ onCancel }: BuilderProps) {
     setSelectedRules((prev) => prev.filter((r) => r._id !== ruleId))
   }
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as Id<'rules'>)
+  }
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    setActiveId(null)
     if (over && active.id !== over.id) {
       setSelectedRules((items) => {
         const oldIndex = items.findIndex((item) => item._id === active.id)
@@ -124,6 +134,14 @@ export function Builder({ onCancel }: BuilderProps) {
       })
     }
   }
+
+  // Get active rule for drag overlay
+  const activeRule = activeId
+    ? selectedRules.find((r) => r._id === activeId)
+    : null
+  const activeIndex = activeId
+    ? selectedRules.findIndex((r) => r._id === activeId)
+    : -1
 
   const handleGenerate = async () => {
     if (!projectName.trim() || selectedRules.length === 0) return
@@ -349,6 +367,7 @@ export function Builder({ onCancel }: BuilderProps) {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
               <SortableContext
@@ -362,10 +381,16 @@ export function Builder({ onCancel }: BuilderProps) {
                       rule={rule}
                       index={index}
                       onRemove={() => removeRule(rule._id)}
+                      onPreview={() => setPreviewRule(rule)}
                     />
                   ))}
                 </div>
               </SortableContext>
+              <DragOverlay>
+                {activeRule && (
+                  <DragOverlayItem rule={activeRule} index={activeIndex} />
+                )}
+              </DragOverlay>
             </DndContext>
           ) : (
             <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-border py-12 text-center">
@@ -410,6 +435,12 @@ export function Builder({ onCancel }: BuilderProps) {
           </div>
         </div>
       </div>
+
+      {/* Rule Preview Modal */}
+      <RulePreviewModal
+        rule={previewRule}
+        onClose={() => setPreviewRule(null)}
+      />
     </div>
   )
 }

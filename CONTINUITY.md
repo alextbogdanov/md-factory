@@ -41,14 +41,10 @@ Build MD Factory — a web app to manage reusable CLAUDE.md rules with tagging, 
 - Phase 6: Animations with Framer Motion
 
 ### Now
-- All TypeScript errors fixed
-- Tailwind CSS v4 dark mode syntax fixed (`.dark` selector instead of `@variant`)
-- Build passes successfully
+- Completed: Rule preview modal and drag-and-drop animation improvements
 
 ### Next
-- Set up Convex deployment (run `pnpm convex dev`)
-- Create `.env.local` with `VITE_CONVEX_URL`
-- Test all features end-to-end
+- Test the new features manually
 
 ## Open Questions
 - None currently
