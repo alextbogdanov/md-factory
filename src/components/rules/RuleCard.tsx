@@ -117,7 +117,7 @@ export function RuleCard({
         {/* Content */}
         <div className={`flex flex-1 flex-col ${selectable ? 'pl-6' : ''}`}>
           <h3 className="mb-2 font-semibold text-foreground">{rule.title}</h3>
-          <p className="mb-3 flex-1 text-sm leading-relaxed text-foreground-secondary">
+          <p className="mb-3 flex-1 break-all text-sm leading-relaxed text-foreground-secondary">
             {bodyPreview}
           </p>
 

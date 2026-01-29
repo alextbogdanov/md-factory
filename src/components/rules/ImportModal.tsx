@@ -271,7 +271,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
                         />
 
                         {/* Body preview */}
-                        <p className="line-clamp-2 text-sm text-foreground-secondary">
+                        <p className="line-clamp-2 break-all text-sm text-foreground-secondary">
                           {rule.body.slice(0, 200)}
                           {rule.body.length > 200 ? '...' : ''}
                         </p>
