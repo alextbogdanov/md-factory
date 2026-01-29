@@ -70,7 +70,7 @@ export function RuleCard({
         exit={{ opacity: 0, scale: 0.9 }}
         whileHover={{ y: -2 }}
         onClick={handleClick}
-        className={`group relative cursor-pointer rounded-xl border bg-background p-4 transition-all hover:shadow-md ${
+        className={`group relative flex h-full cursor-pointer flex-col rounded-xl border bg-background p-4 transition-all hover:shadow-md ${
           selected
             ? 'border-accent ring-2 ring-accent/20'
             : 'border-border'
@@ -115,35 +115,37 @@ export function RuleCard({
         )}
 
         {/* Content */}
-        <div className={selectable ? 'pl-6' : ''}>
+        <div className={`flex flex-1 flex-col ${selectable ? 'pl-6' : ''}`}>
           <h3 className="mb-2 font-semibold text-foreground">{rule.title}</h3>
-          <p className="mb-3 text-sm leading-relaxed text-foreground-secondary">
+          <p className="mb-3 flex-1 text-sm leading-relaxed text-foreground-secondary">
             {bodyPreview}
           </p>
 
-          {/* Tags */}
-          {rule.tags.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {rule.tags
-                .filter(Boolean)
-                .slice(0, 3)
-                .map((tag) => (
-                  <TagChip key={tag!._id} tag={tag!} size="sm" />
-                ))}
-              {rule.tags.length > 3 && (
-                <span className="inline-flex items-center px-2 py-0.5 text-xs text-foreground-muted">
-                  +{rule.tags.length - 3} more
-                </span>
-              )}
-            </div>
-          )}
+          {/* Tags - always at bottom */}
+          <div className="mt-auto">
+            {rule.tags.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {rule.tags
+                  .filter(Boolean)
+                  .slice(0, 3)
+                  .map((tag) => (
+                    <TagChip key={tag!._id} tag={tag!} size="sm" />
+                  ))}
+                {rule.tags.length > 3 && (
+                  <span className="inline-flex items-center px-2 py-0.5 text-xs text-foreground-muted">
+                    +{rule.tags.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
 
-          {/* Project count */}
-          {!selectable && projects && projects.length > 0 && (
-            <p className="text-xs text-foreground-muted">
-              Used in {projects.length} project{projects.length !== 1 ? 's' : ''}
-            </p>
-          )}
+            {/* Project count */}
+            {!selectable && projects && projects.length > 0 && (
+              <p className="text-xs text-foreground-muted">
+                Used in {projects.length} project{projects.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
         </div>
       </motion.div>
 

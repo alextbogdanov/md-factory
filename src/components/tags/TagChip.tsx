@@ -50,6 +50,7 @@ export function TagChip({
 
   return (
     <motion.button
+      type="button"
       onClick={handleClick}
       className={`inline-flex items-center gap-1.5 rounded-full font-medium transition-all ${sizeClasses[size]} ${
         selected
