@@ -15,12 +15,19 @@ import { api } from '../../convex/_generated/api'
 // ### COMPONENTS ###
 // ============================================================================
 import { ProjectCard } from '../components/projects/ProjectCard'
+import { ProjectEditModal } from '../components/projects/ProjectEditModal'
+
+// ============================================================================
+// ### TYPES ###
+// ============================================================================
+import type { Id } from '../../convex/_generated/dataModel'
 
 // ============================================================================
 // ### CUSTOM ###
 // ============================================================================
 export function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingProjectId, setEditingProjectId] = useState<Id<'projects'> | null>(null)
 
   const projects = useQuery(api.projects.list) ?? []
 
@@ -52,10 +59,20 @@ export function ProjectsPage() {
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
           {filteredProjects.map((project) => (
-            <ProjectCard key={project._id} project={project} />
+            <ProjectCard
+              key={project._id}
+              project={project}
+              onEdit={() => setEditingProjectId(project._id)}
+            />
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Edit Modal */}
+      <ProjectEditModal
+        projectId={editingProjectId}
+        onClose={() => setEditingProjectId(null)}
+      />
 
       {/* Empty state */}
       {filteredProjects.length === 0 && (

@@ -2,7 +2,7 @@
 // ### IMPORTS ###
 // ============================================================================
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Copy, Trash2, Check } from 'lucide-react'
+import { ChevronDown, Copy, Trash2, Check, Pencil } from 'lucide-react'
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 
@@ -28,12 +28,13 @@ import type { Doc } from '../../../convex/_generated/dataModel'
 
 interface ProjectCardProps {
   project: Doc<'projects'> & { ruleCount: number }
+  onEdit: () => void
 }
 
 // ============================================================================
 // ### CUSTOM ###
 // ============================================================================
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onEdit }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -108,6 +109,14 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
           {/* Actions */}
           <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+            <motion.button
+              onClick={onEdit}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-background-secondary hover:text-foreground"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Pencil className="h-4 w-4" />
+            </motion.button>
             <motion.button
               onClick={handleCopy}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-background-secondary hover:text-foreground"

@@ -138,6 +138,48 @@ export const create = mutation({
   },
 })
 
+export const update = mutation({
+  args: {
+    id: v.id('projects'),
+    name: v.string(),
+    ruleIds: v.array(v.id('rules')),
+  },
+  handler: async (ctx, args) => {
+    // Validate project exists
+    const project = await ctx.db.get(args.id)
+    if (!project) {
+      throw new Error('Project not found')
+    }
+
+    // Update project name and timestamp
+    await ctx.db.patch(args.id, {
+      name: args.name,
+      updatedAt: Date.now(),
+    })
+
+    // Delete existing projectRules
+    const existingProjectRules = await ctx.db
+      .query('projectRules')
+      .withIndex('by_projectId', (q) => q.eq('projectId', args.id))
+      .collect()
+
+    for (const pr of existingProjectRules) {
+      await ctx.db.delete(pr._id)
+    }
+
+    // Insert new projectRules with order
+    for (let i = 0; i < args.ruleIds.length; i++) {
+      await ctx.db.insert('projectRules', {
+        projectId: args.id,
+        ruleId: args.ruleIds[i],
+        order: i,
+      })
+    }
+
+    return args.id
+  },
+})
+
 export const remove = mutation({
   args: { id: v.id('projects') },
   handler: async (ctx, args) => {

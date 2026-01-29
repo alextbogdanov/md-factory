@@ -41,6 +41,7 @@ export default defineSchema({
   projects: defineTable({
     name: v.string(),
     createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
   })
     .index('by_createdAt', ['createdAt'])
     .index('by_name', ['name']),

@@ -58,9 +58,6 @@ export function RuleCard({
     }
   }
 
-  // Truncate body for preview
-  const bodyPreview = rule.body.slice(0, 150) + (rule.body.length > 150 ? '...' : '')
-
   return (
     <>
       <motion.div
@@ -70,7 +67,7 @@ export function RuleCard({
         exit={{ opacity: 0, scale: 0.9 }}
         whileHover={{ y: -2 }}
         onClick={handleClick}
-        className={`group relative flex h-full cursor-pointer flex-col rounded-xl border bg-background p-4 transition-all hover:shadow-md ${
+        className={`group relative cursor-pointer rounded-xl border bg-background p-4 transition-all hover:shadow-md ${
           selected
             ? 'border-accent ring-2 ring-accent/20'
             : 'border-border'
@@ -115,14 +112,14 @@ export function RuleCard({
         )}
 
         {/* Content */}
-        <div className={`flex flex-1 flex-col ${selectable ? 'pl-6' : ''}`}>
+        <div className={selectable ? 'pl-6' : ''}>
           <h3 className="mb-2 font-semibold text-foreground">{rule.title}</h3>
-          <p className="mb-3 flex-1 break-all text-sm leading-relaxed text-foreground-secondary">
-            {bodyPreview}
+          <p className="mb-3 line-clamp-4 text-sm leading-relaxed text-foreground-secondary">
+            {rule.body}
           </p>
 
-          {/* Tags - always at bottom */}
-          <div className="mt-auto">
+          {/* Tags */}
+          <div>
             {rule.tags.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-1.5">
                 {rule.tags
