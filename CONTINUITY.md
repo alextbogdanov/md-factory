@@ -40,12 +40,13 @@ Build MD Factory — a web app to manage reusable CLAUDE.md rules with tagging, 
 - Phase 5: Projects page (ProjectCard with expand/copy)
 - Phase 6: Animations with Framer Motion
 - Phase 7: Project editing (ProjectEditModal with two-panel layout, drag-drop reordering)
+- Phase 8: Tag-based ordering (TagOrderModal with drag-drop, colored index indicators)
 
 ### Now
-- Completed: Project editing feature
+- Completed: Tag-based ordering feature
 
 ### Next
-- Test the project editing feature manually
+- Test the tag ordering feature manually
 
 ## Open Questions
 - None currently

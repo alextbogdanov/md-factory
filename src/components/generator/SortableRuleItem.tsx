@@ -16,6 +16,34 @@ interface SortableRuleItemProps {
   index: number
   onRemove: () => void
   onPreview: () => void
+  tagColors?: string[]
+}
+
+// ============================================================================
+// ### HELPERS ###
+// ============================================================================
+/**
+ * Generates a conic gradient background for multi-colored index indicators.
+ * Each color gets an equal slice of the circle.
+ */
+function getMultiColorBackground(colors: string[]): string {
+  if (colors.length === 0) return 'color-mix(in srgb, var(--color-accent) 20%, transparent)'
+  if (colors.length === 1) return `${colors[0]}20`
+
+  const sliceSize = 360 / colors.length
+  const stops = colors.map((color, i) => {
+    const start = i * sliceSize
+    const end = (i + 1) * sliceSize
+    return `${color} ${start}deg ${end}deg`
+  })
+  return `conic-gradient(${stops.join(', ')})`
+}
+
+/**
+ * Gets the primary (first) color for text, or default accent if none.
+ */
+function getPrimaryTextColor(colors: string[]): string {
+  return colors.length > 0 ? colors[0] : 'var(--color-accent)'
 }
 
 // ============================================================================
@@ -26,6 +54,7 @@ export function SortableRuleItem({
   index,
   onRemove,
   onPreview,
+  tagColors = [],
 }: SortableRuleItemProps) {
   const {
     attributes,
@@ -65,8 +94,14 @@ export function SortableRuleItem({
         <GripVertical className="h-4 w-4" />
       </button>
 
-      {/* Number */}
-      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-medium text-accent">
+      {/* Number - colored by tags */}
+      <span
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium"
+        style={{
+          background: getMultiColorBackground(tagColors),
+          color: getPrimaryTextColor(tagColors),
+        }}
+      >
         {index + 1}
       </span>
 
@@ -104,9 +139,10 @@ export function SortableRuleItem({
 interface DragOverlayItemProps {
   rule: Doc<'rules'> & { tags: (Doc<'tags'> | null)[] }
   index: number
+  tagColors?: string[]
 }
 
-export function DragOverlayItem({ rule, index }: DragOverlayItemProps) {
+export function DragOverlayItem({ rule, index, tagColors = [] }: DragOverlayItemProps) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-accent bg-background p-3 shadow-xl">
       {/* Drag handle */}
@@ -114,8 +150,14 @@ export function DragOverlayItem({ rule, index }: DragOverlayItemProps) {
         <GripVertical className="h-4 w-4" />
       </span>
 
-      {/* Number */}
-      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-medium text-accent">
+      {/* Number - colored by tags */}
+      <span
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-medium"
+        style={{
+          background: getMultiColorBackground(tagColors),
+          color: getPrimaryTextColor(tagColors),
+        }}
+      >
         {index + 1}
       </span>
 

@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion'
 import {
   ArrowLeft,
+  ArrowUpDown,
   Check,
   Copy,
   FileText,
@@ -42,6 +43,7 @@ import { RuleCard } from '../rules/RuleCard'
 import { TagChip } from '../tags/TagChip'
 import { SortableRuleItem, DragOverlayItem } from './SortableRuleItem'
 import { RulePreviewModal } from '../ui/RulePreviewModal'
+import { TagOrderModal } from './TagOrderModal'
 
 // ============================================================================
 // ### UTILITIES ###
@@ -74,6 +76,8 @@ export function Builder({ onCancel }: BuilderProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [previewRule, setPreviewRule] = useState<RuleWithTags | null>(null)
   const [activeId, setActiveId] = useState<Id<'rules'> | null>(null)
+  const [tagOrderModalOpen, setTagOrderModalOpen] = useState(false)
+  const [tagOrder, setTagOrder] = useState<Id<'tags'>[]>([])  // Current tag priority order
 
   const rules = useQuery(api.rules.list) ?? []
   const tags = useQuery(api.tags.list) ?? []
@@ -142,6 +146,73 @@ export function Builder({ onCancel }: BuilderProps) {
   const activeIndex = activeId
     ? selectedRules.findIndex((r) => r._id === activeId)
     : -1
+
+  // Extract unique tags from selected rules
+  const selectedRuleTags = (() => {
+    const tagMap = new Map<string, { _id: string; name: string; color: string }>()
+    selectedRules.forEach((rule) => {
+      rule.tags.forEach((tag) => {
+        if (tag && !tagMap.has(tag._id)) {
+          tagMap.set(tag._id, { _id: tag._id, name: tag.name, color: tag.color })
+        }
+      })
+    })
+    return Array.from(tagMap.values())
+  })()
+
+  // Handle tag order application - sorts rules by tag priority
+  const handleApplyTagOrder = (orderedTagIds: string[]) => {
+    setTagOrder(orderedTagIds as Id<'tags'>[])
+
+    // Sort selectedRules by tag priority
+    const sortedRules = [...selectedRules].sort((a, b) => {
+      // Find the highest priority tag for each rule
+      const aPriority = Math.min(
+        ...a.tags
+          .filter((t): t is NonNullable<typeof t> => t !== null)
+          .map((t) => {
+            const idx = orderedTagIds.indexOf(t._id)
+            return idx === -1 ? Infinity : idx
+          }),
+        Infinity
+      )
+      const bPriority = Math.min(
+        ...b.tags
+          .filter((t): t is NonNullable<typeof t> => t !== null)
+          .map((t) => {
+            const idx = orderedTagIds.indexOf(t._id)
+            return idx === -1 ? Infinity : idx
+          }),
+        Infinity
+      )
+      return aPriority - bPriority
+    })
+
+    setSelectedRules(sortedRules)
+  }
+
+  // Get tag colors for a rule (for colored index indicator)
+  const getRuleTagColors = (rule: RuleWithTags): string[] => {
+    const colors: string[] = []
+    const validTags = rule.tags.filter((t): t is NonNullable<typeof t> => t !== null)
+
+    // If we have a tag order, sort by priority
+    if (tagOrder.length > 0) {
+      validTags.sort((a, b) => {
+        const aIdx = tagOrder.indexOf(a._id as Id<'tags'>)
+        const bIdx = tagOrder.indexOf(b._id as Id<'tags'>)
+        if (aIdx === -1 && bIdx === -1) return 0
+        if (aIdx === -1) return 1
+        if (bIdx === -1) return -1
+        return aIdx - bIdx
+      })
+    }
+
+    validTags.forEach((tag) => {
+      colors.push(tag.color)
+    })
+    return colors
+  }
 
   const handleGenerate = async () => {
     if (!projectName.trim() || selectedRules.length === 0) return
@@ -354,12 +425,25 @@ export function Builder({ onCancel }: BuilderProps) {
               Selected Rules ({selectedRules.length})
             </h2>
             {selectedRules.length > 0 && (
-              <button
-                onClick={() => setSelectedRules([])}
-                className="text-sm text-foreground-muted hover:text-foreground"
-              >
-                Clear all
-              </button>
+              <div className="flex items-center gap-2">
+                {selectedRuleTags.length > 0 && (
+                  <motion.button
+                    onClick={() => setTagOrderModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-background-secondary px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors hover:bg-background-tertiary hover:text-foreground"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    Order by Tags
+                  </motion.button>
+                )}
+                <button
+                  onClick={() => setSelectedRules([])}
+                  className="text-sm text-foreground-muted hover:text-foreground"
+                >
+                  Clear all
+                </button>
+              </div>
             )}
           </div>
 
@@ -382,13 +466,18 @@ export function Builder({ onCancel }: BuilderProps) {
                       index={index}
                       onRemove={() => removeRule(rule._id)}
                       onPreview={() => setPreviewRule(rule)}
+                      tagColors={getRuleTagColors(rule)}
                     />
                   ))}
                 </div>
               </SortableContext>
               <DragOverlay>
                 {activeRule && (
-                  <DragOverlayItem rule={activeRule} index={activeIndex} />
+                  <DragOverlayItem
+                    rule={activeRule}
+                    index={activeIndex}
+                    tagColors={getRuleTagColors(activeRule)}
+                  />
                 )}
               </DragOverlay>
             </DndContext>
@@ -440,6 +529,14 @@ export function Builder({ onCancel }: BuilderProps) {
       <RulePreviewModal
         rule={previewRule}
         onClose={() => setPreviewRule(null)}
+      />
+
+      {/* Tag Order Modal */}
+      <TagOrderModal
+        open={tagOrderModalOpen}
+        onClose={() => setTagOrderModalOpen(false)}
+        tags={selectedRuleTags}
+        onApply={handleApplyTagOrder}
       />
     </div>
   )
