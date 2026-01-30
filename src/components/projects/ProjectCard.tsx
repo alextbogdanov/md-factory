@@ -3,7 +3,7 @@
 // ============================================================================
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Copy, Trash2, Check, Pencil } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 
 // ============================================================================
@@ -38,10 +38,12 @@ export function ProjectCard({ project, onEdit }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isCopyLoading, setIsCopyLoading] = useState(false)
 
+  // Fetch project details when expanded OR when loading for copy
   const projectDetails = useQuery(
     api.projects.get,
-    isExpanded ? { id: project._id } : 'skip'
+    isExpanded || isCopyLoading ? { id: project._id } : 'skip'
   )
   const removeProject = useMutation(api.projects.remove)
 
@@ -50,22 +52,47 @@ export function ProjectCard({ project, onEdit }: ProjectCardProps) {
     setShowDeleteConfirm(false)
   }
 
+  // Effect to perform copy once data is loaded during copy loading state
+  useEffect(() => {
+    if (isCopyLoading && projectDetails?.rules) {
+      const markdown = generateMarkdown(
+        projectDetails.rules
+          .filter((r): r is NonNullable<typeof r> => r !== null)
+          .map((r) => ({
+            title: r.title,
+            body: r.body,
+          })),
+        project.name
+      )
+
+      navigator.clipboard.writeText(markdown).then(() => {
+        setCopied(true)
+        setIsCopyLoading(false)
+        setTimeout(() => setCopied(false), 2000)
+      })
+    }
+  }, [isCopyLoading, projectDetails, project.name])
+
   const handleCopy = async () => {
-    if (!projectDetails?.rules) return
+    // If already have data, copy immediately
+    if (projectDetails?.rules) {
+      const markdown = generateMarkdown(
+        projectDetails.rules
+          .filter((r): r is NonNullable<typeof r> => r !== null)
+          .map((r) => ({
+            title: r.title,
+            body: r.body,
+          })),
+        project.name
+      )
 
-    const markdown = generateMarkdown(
-      projectDetails.rules
-        .filter((r): r is NonNullable<typeof r> => r !== null)
-        .map((r) => ({
-          title: r.title,
-          body: r.body,
-        })),
-      project.name
-    )
-
-    await navigator.clipboard.writeText(markdown)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(markdown)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } else {
+      // Trigger loading state which will fetch data
+      setIsCopyLoading(true)
+    }
   }
 
   const formattedDate = new Date(project.createdAt).toLocaleDateString(
@@ -119,11 +146,14 @@ export function ProjectCard({ project, onEdit }: ProjectCardProps) {
             </motion.button>
             <motion.button
               onClick={handleCopy}
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-background-secondary hover:text-foreground"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              disabled={isCopyLoading}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground-muted transition-colors hover:bg-background-secondary hover:text-foreground disabled:cursor-not-allowed"
+              whileHover={{ scale: isCopyLoading ? 1 : 1.05 }}
+              whileTap={{ scale: isCopyLoading ? 1 : 0.95 }}
             >
-              {copied ? (
+              {isCopyLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-foreground-muted border-t-transparent" />
+              ) : copied ? (
                 <Check className="h-4 w-4 text-success" />
               ) : (
                 <Copy className="h-4 w-4" />

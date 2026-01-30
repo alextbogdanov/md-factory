@@ -44,10 +44,10 @@ Build MD Factory — a web app to manage reusable CLAUDE.md rules with tagging, 
 - Phase 9: Affected projects notification modal on rule update
 
 ### Now
-- Completed: Affected projects modal on rule update
+- Completed: Fixed copy button to load rules without expanding
 
 ### Next
-- Test the affected projects modal feature manually
+- Test the copy button fix manually
 
 ## Open Questions
 - None currently
