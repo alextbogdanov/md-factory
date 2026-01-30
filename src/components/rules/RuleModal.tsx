@@ -15,11 +15,12 @@ import { api } from '../../../convex/_generated/api'
 // ### COMPONENTS ###
 // ============================================================================
 import { TagChip } from '../tags/TagChip'
+import { AffectedProjectsModal } from '../ui/AffectedProjectsModal'
 
 // ============================================================================
 // ### TYPES ###
 // ============================================================================
-import type { Id } from '../../../convex/_generated/dataModel'
+import type { Id, Doc } from '../../../convex/_generated/dataModel'
 
 interface RuleModalProps {
   ruleId: Id<'rules'> | null
@@ -32,6 +33,10 @@ interface RuleModalProps {
 export function RuleModal({ ruleId, onClose }: RuleModalProps) {
   const existingRule = useQuery(api.rules.get, ruleId ? { id: ruleId } : 'skip')
   const tags = useQuery(api.tags.list) ?? []
+  const affectedProjects = useQuery(
+    api.projects.getProjectsUsingRule,
+    ruleId ? { ruleId } : 'skip'
+  ) as Doc<'projects'>[] | undefined
 
   const [title, setTitle] = useState(existingRule?.title ?? '')
   const [body, setBody] = useState(existingRule?.body ?? '')
@@ -39,6 +44,7 @@ export function RuleModal({ ruleId, onClose }: RuleModalProps) {
     existingRule?.tags.map((t) => t?._id).filter(Boolean) as Id<'tags'>[] ?? []
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showAffectedProjects, setShowAffectedProjects] = useState(false)
 
   const createRule = useMutation(api.rules.create)
   const updateRule = useMutation(api.rules.update)
@@ -73,20 +79,32 @@ export function RuleModal({ ruleId, onClose }: RuleModalProps) {
           body: body.trim(),
           tagIds: selectedTagIds,
         })
+        // Show affected projects modal if there are projects using this rule
+        if (affectedProjects && affectedProjects.length > 0) {
+          setShowAffectedProjects(true)
+        } else {
+          onClose()
+        }
       } else {
         await createRule({
           title: title.trim(),
           body: body.trim(),
           tagIds: selectedTagIds,
         })
+        onClose()
       }
-      onClose()
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const handleCloseAffectedProjects = () => {
+    setShowAffectedProjects(false)
+    onClose()
+  }
+
   return (
+    <>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -198,5 +216,14 @@ export function RuleModal({ ruleId, onClose }: RuleModalProps) {
         </form>
       </motion.div>
     </motion.div>
+
+    {/* Affected Projects Modal */}
+    <AffectedProjectsModal
+      open={showAffectedProjects}
+      onClose={handleCloseAffectedProjects}
+      projects={affectedProjects ?? []}
+      ruleName={title}
+    />
+    </>
   )
 }
