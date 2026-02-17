@@ -59,7 +59,8 @@ export function ProjectEditModal({ projectId, onClose }: ProjectEditModalProps) 
   const [isSaving, setIsSaving] = useState(false)
   const [previewRule, setPreviewRule] = useState<RuleWithTags | null>(null)
   const [activeId, setActiveId] = useState<Id<'rules'> | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
+  // Track which project we've initialized for, using a counter to handle same-project reopens
+  const [initKey, setInitKey] = useState<string | null>(null)
 
   const project = useQuery(
     api.projects.get,
@@ -76,14 +77,26 @@ export function ProjectEditModal({ projectId, onClose }: ProjectEditModalProps) 
     })
   )
 
-  // Initialize state when project loads
+  // Generate a unique key for this modal session based on project ID and when it was last updated
+  // This ensures we reinitialize when opening a different project OR when the same project has been updated
+  const projectVersion = project ? `${project._id}-${project.updatedAt ?? project._creationTime}` : null
+
+  // Initialize state when project loads or when project data has changed
   useEffect(() => {
-    if (project && !isInitialized) {
+    if (project && projectId && projectVersion && initKey !== projectVersion) {
+      const validRules = project.rules.filter((r): r is RuleWithTags => r !== null)
+      console.log('Initializing project state:', {
+        projectId,
+        projectVersion,
+        initKey,
+        ruleCount: validRules.length,
+        ruleIds: validRules.map((r) => r._id),
+      })
       setProjectName(project.name)
-      setSelectedRules(project.rules as RuleWithTags[])
-      setIsInitialized(true)
+      setSelectedRules(validRules)
+      setInitKey(projectVersion)
     }
-  }, [project, isInitialized])
+  }, [project, projectId, projectVersion, initKey])
 
   // Reset state when modal closes
   useEffect(() => {
@@ -92,7 +105,7 @@ export function ProjectEditModal({ projectId, onClose }: ProjectEditModalProps) 
       setSelectedRules([])
       setSearchQuery('')
       setSelectedTagIds([])
-      setIsInitialized(false)
+      setInitKey(null)
     }
   }, [projectId])
 
@@ -119,7 +132,11 @@ export function ProjectEditModal({ projectId, onClose }: ProjectEditModalProps) 
   }
 
   const addRule = (rule: RuleWithTags) => {
-    if (selectedRules.some((r) => r._id === rule._id)) return
+    if (selectedRules.some((r) => r._id === rule._id)) {
+      console.log('Rule already selected:', rule._id)
+      return
+    }
+    console.log('Adding rule:', rule._id, rule.title)
     setSelectedRules((prev) => [...prev, rule])
   }
 
@@ -154,14 +171,21 @@ export function ProjectEditModal({ projectId, onClose }: ProjectEditModalProps) 
   const handleSave = async () => {
     if (!projectId || !projectName.trim() || selectedRules.length === 0) return
 
+    const ruleIds = selectedRules.map((r) => r._id)
+    console.log('Saving project with rules:', ruleIds)
+
     setIsSaving(true)
     try {
       await updateProject({
         id: projectId,
         name: projectName.trim(),
-        ruleIds: selectedRules.map((r) => r._id),
+        ruleIds,
       })
+      console.log('Project saved successfully')
       onClose()
+    } catch (error) {
+      console.error('Failed to save project:', error)
+      // Keep modal open on error so user can retry
     } finally {
       setIsSaving(false)
     }
